@@ -229,7 +229,14 @@ let lockTimer = null;
 
 /* ---------- criptografia (AES-GCM 256 + PBKDF2) ---------- */
 const enc = new TextEncoder(), dec = new TextDecoder();
-const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+function b64(buf){
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  for(let i = 0; i < bytes.length; i += 8192){
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+  }
+  return btoa(bin);
+}
 const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 
 async function derivar(senha, saltBytes){
@@ -251,9 +258,17 @@ function lerCofre(){
   try { return JSON.parse(localStorage.getItem(KEY)); } catch(e){ return null; }
 }
 async function save(){
-  if(!cryptoKey) return;
-  try { localStorage.setItem(KEY, JSON.stringify(await cifrar(records, cryptoKey, salt))); }
-  catch(e){ toast("Armazenamento cheio. Faça backup e remova anexos grandes.", true); }
+  if(!cryptoKey) return false;
+  try {
+    localStorage.setItem(KEY, JSON.stringify(await cifrar(records, cryptoKey, salt)));
+    return true;
+  } catch(e){
+    const cheio = e && (e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED" || e.code === 22);
+    toast(cheio
+      ? "Espaço do navegador cheio. Faça backup e remova anexos grandes deste diário."
+      : "Não foi possível salvar: " + (e && e.message ? e.message : e), true);
+    return false;
+  }
 }
 
 /* ---------- tela de bloqueio ---------- */
@@ -375,7 +390,7 @@ function renderFileList(){
 }
 
 /* ---------- salvar ---------- */
-$("#form").addEventListener("submit", e => {
+$("#form").addEventListener("submit", async e => {
   e.preventDefault();
   const id = $("#id").value;
   const base = {
@@ -391,16 +406,25 @@ $("#form").addEventListener("submit", e => {
     provas: $("#provas").value.trim(),
     impacto: $("#impacto").value.trim()
   };
+  let novo = null;
   if(id){
     const r = records.find(x => x.id === id);
     Object.assign(r, base, { editadoEm: Date.now() });
     if(pendingFiles.length) r.anexos = (r.anexos||[]).concat(pendingFiles);
-    toast("Relato atualizado.");
   } else {
-    records.push(Object.assign({ id: uid(), criadoEm: Date.now(), anexos: pendingFiles }, base));
-    toast("Relato registrado.");
+    novo = Object.assign({ id: uid(), criadoEm: Date.now(), anexos: pendingFiles }, base);
+    records.push(novo);
   }
-  save(); resetForm(); render();
+  $("#btnSave").disabled = true;
+  const ok = await save();
+  $("#btnSave").disabled = false;
+  if(!ok){
+    if(novo) records = records.filter(x => x !== novo);
+    render();
+    return;
+  }
+  toast(id ? "Relato atualizado." : "Relato registrado.");
+  resetForm(); render();
 });
 
 $("#btnCancel").addEventListener("click", resetForm);
@@ -431,10 +455,10 @@ function edit(id){
   $("#btnCancel").hidden = false;
   window.scrollTo({ top:0, behavior:"smooth" });
 }
-function remove(id){
+async function remove(id){
   if(!confirm("Excluir este relato definitivamente?")) return;
   records = records.filter(x => x.id !== id);
-  save(); render(); toast("Relato excluído.");
+  if(await save()){ render(); toast("Relato excluído."); }
 }
 
 /* ---------- filtros e render ---------- */

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diário de Relatos — Registro de Condutas no Trabalho</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2e; --panel2:#1d2639; --line:#2a3550;
+    --txt:#e8edf7; --muted:#9aa8c4; --accent:#5b8cff; --accent2:#7c5cff;
+    --ok:#3fbf7f; --warn:#f0b23f; --danger:#ef5f6b;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.45}
+  header.top{padding:18px 20px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,#141b2b,#1a2237);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  header.top h1{font-size:19px;margin:0}
+  header.top .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px;display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start}
+  @media(max-width:950px){.wrap{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .card h2{margin:0 0 12px;font-size:15px;letter-spacing:.3px;text-transform:uppercase;color:var(--muted)}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  input,select,textarea,button{font-family:inherit;font-size:14px}
+  input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 10px}
+  textarea{min-height:120px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:0}
+  .row{display:flex;gap:10px}
+  .row>*{flex:1}
+  button{cursor:pointer;border:none;border-radius:8px;padding:10px 14px;font-weight:600;background:var(--accent);color:#fff}
+  button.sec{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);padding:6px 10px;font-weight:500;font-size:12px}
+  button.danger{background:var(--danger)}
+  button:hover{filter:brightness(1.1)}
+  .actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .hint{font-size:11px;color:var(--muted);margin-top:6px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  @media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+  .stat .n{font-size:22px;font-weight:700}
+  .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .filters>*{flex:1;min-width:150px}
+  .tl{position:relative;padding-left:26px}
+  .tl:before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--line)}
+  .ev{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px}
+  .ev:before{content:"";position:absolute;left:-22px;top:20px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+  .ev.g5:before{background:var(--danger)} .ev.g4:before{background:#f07f4a}
+  .ev.g3:before{background:var(--warn)} .ev.g2:before{background:#8fbf5a} .ev.g1:before{background:var(--ok)}
+  .ev .when{font-size:13px;font-weight:700;color:var(--accent)}
+  .ev h3{margin:4px 0 8px;font-size:16px}
+  .ev p.body{white-space:pre-wrap;margin:8px 0}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .tag{font-size:11px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);padding:3px 8px;border-radius:99px}
+  .tag.sev{border-color:transparent;color:#101625;font-weight:700}
+  .ev-actions{display:flex;gap:6px;margin-top:10px}
+  .empty{text-align:center;color:var(--muted);padding:40px;border:1px dashed var(--line);border-radius:var(--radius)}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ok);color:#06210f;padding:10px 18px;border-radius:99px;font-weight:700;opacity:0;transition:.25s;pointer-events:none;z-index:99}
+  .toast.show{opacity:1}
+  .toast.err{background:var(--danger);color:#fff}
+  .fileList{font-size:12px;color:var(--muted);margin-top:6px}
+  .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .thumbs a{display:block;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:11px;color:var(--muted);padding:6px 8px;text-decoration:none;background:var(--panel2)}
+  .thumbs img{max-height:90px;display:block;border-radius:6px}
+  footer.note{max-width:1180px;margin:0 auto 40px;padding:0 20px;color:var(--muted);font-size:12px}
+  .print-only{display:none}
+  #lock{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#1b2440,#0c111c);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+  #lock[hidden]{display:none}
+  #lock .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;width:100%;max-width:400px}
+  #lock h2{margin:0 0 6px;font-size:18px;text-transform:none;color:var(--txt);letter-spacing:0}
+  #lock p{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+  #lock button{width:100%;margin-top:14px}
+  #lock .err{color:var(--danger);font-size:12.5px;min-height:18px;margin-top:8px}
+  #lock .alt{margin-top:14px;text-align:center}
+  #lock .alt a{color:var(--muted);font-size:11.5px;cursor:pointer;text-decoration:underline}
+  body.locked .wrap,body.locked header.top,body.locked footer.note{filter:blur(6px);pointer-events:none;user-select:none}
+  @media print{
+    body{background:#fff;color:#000}
+    header.top,.card.form,.filters,.ev-actions,.toolbar,footer.note,.stats{display:none!important}
+    .wrap{display:block;max-width:none;padding:0}
+    .print-only{display:block;margin-bottom:18px}
+    .print-only h1{margin:0 0 4px;font-size:20px}
+    .print-only .pmeta{font-size:12px;color:#444}
+    .tl{padding-left:0}.tl:before{display:none}
+    .ev{border:1px solid #bbb;page-break-inside:avoid;margin-bottom:12px;background:#fff}
+    .ev:before{display:none}
+    .ev .when{color:#000}
+    .tag{border:1px solid #999;color:#333;background:#f3f3f3}
+    .thumbs img{max-height:180px}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>Diário de Relatos — condutas no ambiente de trabalho</h1>
+    <div class="sub">Registro cronológico com data, hora e descrição dos fatos. Dados criptografados com sua senha, salvos somente neste navegador.</div>
+  </div>
+  <div class="toolbar actions" style="margin:0">
+    <button class="sec" id="btnExportJson">Backup (JSON)</button>
+    <button class="sec" id="btnImport">Restaurar backup</button>
+    <button class="sec" id="btnExportMd">Exportar texto</button>
+    <button class="sec" id="btnSenha">Trocar senha</button>
+    <button class="sec" id="btnLock">Bloquear</button>
+    <button id="btnPdf">Gerar dossiê (PDF)</button>
+    <input type="file" id="fileImport" accept="application/json" hidden>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="card form">
+    <h2 id="formTitle">Novo relato</h2>
+    <form id="form">
+      <input type="hidden" id="id">
+      <div class="row">
+        <div><label for="data">Data do ocorrido *</label><input type="date" id="data" required></div>
+        <div><label for="hora">Hora *</label><input type="time" id="hora" required></div>
+      </div>
+      <label for="titulo">Título / resumo *</label>
+      <input id="titulo" maxlength="120" placeholder="Ex.: Humilhação em reunião de equipe" required>
+
+      <label for="tipo">Tipo de conduta *</label>
+      <select id="tipo" required>
+        <option>Assédio moral</option>
+        <option>Abuso de autoridade</option>
+        <option>Ameaça</option>
+        <option>Outro</option>
+      </select>
+
+      <label for="gravidade">Gravidade percebida (1 a 5) *</label>
+      <select id="gravidade" required>
+        <option value="1">1 — leve</option>
+        <option value="2">2 — moderada</option>
+        <option value="3" selected>3 — significativa</option>
+        <option value="4">4 — grave</option>
+        <option value="5">5 — gravíssima</option>
+      </select>
+
+      <label for="relato">Relato dos fatos *</label>
+      <textarea id="relato" placeholder="Descreva objetivamente o que aconteceu: o que foi dito/feito, por quem, na frente de quem, e qual o efeito. Use as palavras exatas quando lembrar delas." required></textarea>
+
+      <div class="row">
+        <div><label for="local">Local</label><input id="local" placeholder="Sala de reunião, Teams, WhatsApp..."></div>
+        <div><label for="envolvido">Autor da conduta</label><input id="envolvido" placeholder="Nome / cargo"></div>
+      </div>
+
+      <label for="testemunhas">Testemunhas (separadas por vírgula)</label>
+      <input id="testemunhas" placeholder="Ana Souza, Carlos Lima">
+
+      <label for="provas">Provas existentes</label>
+      <input id="provas" placeholder="Print do WhatsApp, e-mail, gravação, ata...">
+
+      <label for="impacto">Impacto em você</label>
+      <input id="impacto" placeholder="Crise de ansiedade, afastamento, atestado médico...">
+
+      <label for="anexos">Anexar arquivos (imagens/PDF, até 3 MB cada)</label>
+      <input type="file" id="anexos" multiple accept="image/*,application/pdf">
+      <div class="fileList" id="fileList"></div>
+
+      <div class="actions">
+        <button type="submit" id="btnSave">Salvar relato</button>
+        <button type="button" class="sec" id="btnCancel" hidden>Cancelar edição</button>
+      </div>
+      <div class="hint">Cada relato guarda também a data/hora em que foi registrado no sistema — isso ajuda a demonstrar que o diário foi feito na época dos fatos.</div>
+    </form>
+  </section>
+
+  <section>
+    <div class="print-only">
+      <h1>Dossiê de relatos — condutas no ambiente de trabalho</h1>
+      <div class="pmeta" id="printMeta"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="stTotal">0</div><div class="l">Relatos</div></div>
+      <div class="stat"><div class="n" id="stPeriodo">—</div><div class="l">Período</div></div>
+      <div class="stat"><div class="n" id="stGraves">0</div><div class="l">Graves (4-5)</div></div>
+      <div class="stat"><div class="n" id="stTest">0</div><div class="l">Testemunhas</div></div>
+    </div>
+
+    <div class="filters">
+      <input id="fBusca" placeholder="Buscar no texto...">
+      <select id="fTipo"><option value="">Todos os tipos</option></select>
+      <select id="fOrdem"><option value="desc">Mais recentes primeiro</option><option value="asc">Mais antigos primeiro</option></select>
+      <div class="row" style="flex:2">
+        <input type="date" id="fDe" title="De"><input type="date" id="fAte" title="Até">
+      </div>
+    </div>
+
+    <div class="tl" id="timeline"></div>
+  </section>
+</div>
+
+<footer class="note">
+  Privacidade: nada é enviado para a internet. Os relatos são criptografados (AES-256) com a sua senha e ficam apenas no armazenamento local deste navegador — mesmo publicado na web, o site não guarda nada em servidor. Se você esquecer a senha, não há recuperação.
+  Faça o <b>backup em JSON</b> com frequência e guarde uma cópia fora do equipamento da empresa.
+  Este material é um registro pessoal de fatos; a avaliação jurídica deve ser feita por advogado(a) trabalhista ou pelo sindicato.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div id="lock" hidden>
+  <form class="box" id="lockForm">
+    <h2 id="lockTitle">Diário protegido</h2>
+    <p id="lockMsg">Digite sua senha para abrir os relatos.</p>
+    <label for="lockPwd">Senha</label>
+    <input type="password" id="lockPwd" autocomplete="current-password" required>
+    <div id="lockConfirmWrap" hidden>
+      <label for="lockPwd2">Confirme a senha</label>
+      <input type="password" id="lockPwd2" autocomplete="new-password">
+    </div>
+    <div class="err" id="lockErr"></div>
+    <button type="submit" id="lockBtn">Abrir</button>
+    <div class="alt"><a id="lockReset">Esqueci a senha / começar um diário novo</a></div>
+  </form>
+</div>
+
+<script>
+const KEY = "diario_relatos_v2";
+const KEY_LEGADO = "diario_relatos_v1";
+const ITER = 210000;
+const AUTO_LOCK_MS = 10 * 60 * 1000;
+const $ = s => document.querySelector(s);
+let records = [];
+let pendingFiles = [];
+let cryptoKey = null;
+let salt = null;
+let lockTimer = null;
+
+/* ---------- criptografia (AES-GCM 256 + PBKDF2) ---------- */
+const enc = new TextEncoder(), dec = new TextDecoder();
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function derivar(senha, saltBytes){
+  const base = await crypto.subtle.importKey("raw", enc.encode(senha), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name:"PBKDF2", salt:saltBytes, iterations:ITER, hash:"SHA-256" },
+    base, { name:"AES-GCM", length:256 }, false, ["encrypt","decrypt"]);
+}
+async function cifrar(obj, key, saltBytes){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name:"AES-GCM", iv }, key, enc.encode(JSON.stringify(obj)));
+  return { v:2, salt:b64(saltBytes), iv:b64(iv), ct:b64(ct) };
+}
+async function decifrar(cofre, key){
+  const txt = await crypto.subtle.decrypt({ name:"AES-GCM", iv:unb64(cofre.iv) }, key, unb64(cofre.ct));
+  return JSON.parse(dec.decode(txt));
+}
+function lerCofre(){
+  try { return JSON.parse(localStorage.getItem(KEY)); } catch(e){ return null; }
+}
+async function save(){
+  if(!cryptoKey) return;
+  try { localStorage.setItem(KEY, JSON.stringify(await cifrar(records, cryptoKey, salt))); }
+  catch(e){ toast("Armazenamento cheio. Faça backup e remova anexos grandes.", true); }
+}
+
+/* ---------- tela de bloqueio ---------- */
+function mostrarLock(modo){
+  const novo = modo === "criar", trocar = modo === "trocar";
+  $("#lock").hidden = false;
+  document.body.classList.add("locked");
+  $("#lockTitle").textContent = trocar ? "Trocar senha" : novo ? "Proteger seu diário" : "Diário protegido";
+  $("#lockMsg").textContent = trocar
+    ? "Defina a nova senha. Os relatos serão regravados com ela."
+    : novo
+      ? "Crie uma senha. Os relatos são criptografados neste aparelho com ela — sem a senha, ninguém lê o conteúdo, nem mesmo quem abrir este site."
+      : "Digite sua senha para abrir os relatos.";
+  $("#lockConfirmWrap").hidden = !(novo || trocar);
+  $("#lockPwd2").required = novo || trocar;
+  $("#lockBtn").textContent = trocar ? "Salvar nova senha" : novo ? "Criar senha" : "Abrir";
+  $("#lockReset").hidden = novo;
+  $("#lockErr").textContent = "";
+  $("#lockForm").dataset.modo = modo;
+  $("#lockForm").reset();
+  setTimeout(() => $("#lockPwd").focus(), 50);
+}
+function esconderLock(){
+  $("#lock").hidden = true;
+  document.body.classList.remove("locked");
+  $("#lockForm").reset();
+  agendarAutoLock();
+}
+function bloquear(){
+  cryptoKey = null; records = []; render();
+  mostrarLock("abrir");
+}
+function agendarAutoLock(){
+  clearTimeout(lockTimer);
+  if(cryptoKey) lockTimer = setTimeout(() => { bloquear(); toast("Diário bloqueado por inatividade."); }, AUTO_LOCK_MS);
+}
+["click","keydown","mousemove"].forEach(ev => document.addEventListener(ev, () => { if(cryptoKey) agendarAutoLock(); }, { passive:true }));
+
+$("#lockForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const modo = $("#lockForm").dataset.modo;
+  const senha = $("#lockPwd").value;
+  const erro = $("#lockErr");
+  erro.textContent = "";
+  if(modo === "criar" || modo === "trocar"){
+    if(senha.length < 8){ erro.textContent = "Use pelo menos 8 caracteres."; return; }
+    if(senha !== $("#lockPwd2").value){ erro.textContent = "As senhas não conferem."; return; }
+    $("#lockBtn").textContent = "Processando...";
+    salt = crypto.getRandomValues(new Uint8Array(16));
+    cryptoKey = await derivar(senha, salt);
+    if(modo === "criar"){
+      const legado = localStorage.getItem(KEY_LEGADO);
+      if(legado){
+        try { records = JSON.parse(legado) || []; localStorage.removeItem(KEY_LEGADO); } catch(err){ records = []; }
+      }
+    }
+    await save(); esconderLock(); render();
+    toast(modo === "trocar" ? "Senha alterada." : "Diário protegido com senha.");
+  } else {
+    const cofre = lerCofre();
+    if(!cofre){ mostrarLock("criar"); return; }
+    $("#lockBtn").textContent = "Abrindo...";
+    try{
+      salt = unb64(cofre.salt);
+      const k = await derivar(senha, salt);
+      records = await decifrar(cofre, k);
+      cryptoKey = k;
+      esconderLock(); render();
+    }catch(err){
+      erro.textContent = "Senha incorreta.";
+      $("#lockBtn").textContent = "Abrir";
+    }
+  }
+});
+
+$("#lockReset").addEventListener("click", () => {
+  if(!confirm("Isso apaga todos os relatos salvos neste navegador e cria um diário novo. Sem a senha não há como recuperá-los. Continuar?")) return;
+  localStorage.removeItem(KEY);
+  records = []; cryptoKey = null;
+  mostrarLock("criar");
+});
+$("#btnLock").addEventListener("click", bloquear);
+$("#btnSenha").addEventListener("click", () => mostrarLock("trocar"));
+function toast(msg, err){
+  const t = $("#toast"); t.textContent = msg;
+  t.className = "toast show" + (err ? " err" : "");
+  setTimeout(()=>t.className = "toast", 2800);
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function esc(s){ return (s||"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function fmtDate(iso){
+  if(!iso) return "";
+  const [y,m,d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+function weekday(iso){
+  const dt = new Date(iso + "T12:00:00");
+  return ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"][dt.getDay()];
+}
+function fmtStamp(ms){
+  const d = new Date(ms);
+  return d.toLocaleString("pt-BR");
+}
+
+/* ---------- anexos ---------- */
+$("#anexos").addEventListener("change", async e => {
+  pendingFiles = [];
+  for(const f of e.target.files){
+    if(f.size > 3*1024*1024){ toast(`"${f.name}" tem mais de 3 MB e foi ignorado.`, true); continue; }
+    pendingFiles.push({ name:f.name, type:f.type, data: await toDataURL(f) });
+  }
+  renderFileList();
+});
+function toDataURL(file){
+  return new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(file); });
+}
+function renderFileList(){
+  $("#fileList").textContent = pendingFiles.length ? pendingFiles.map(f=>f.name).join(", ") : "";
+}
+
+/* ---------- salvar ---------- */
+$("#form").addEventListener("submit", e => {
+  e.preventDefault();
+  const id = $("#id").value;
+  const base = {
+    data: $("#data").value,
+    hora: $("#hora").value,
+    titulo: $("#titulo").value.trim(),
+    tipo: $("#tipo").value,
+    gravidade: +$("#gravidade").value,
+    relato: $("#relato").value.trim(),
+    local: $("#local").value.trim(),
+    envolvido: $("#envolvido").value.trim(),
+    testemunhas: $("#testemunhas").value.trim(),
+    provas: $("#provas").value.trim(),
+    impacto: $("#impacto").value.trim()
+  };
+  if(id){
+    const r = records.find(x => x.id === id);
+    Object.assign(r, base, { editadoEm: Date.now() });
+    if(pendingFiles.length) r.anexos = (r.anexos||[]).concat(pendingFiles);
+    toast("Relato atualizado.");
+  } else {
+    records.push(Object.assign({ id: uid(), criadoEm: Date.now(), anexos: pendingFiles }, base));
+    toast("Relato registrado.");
+  }
+  save(); resetForm(); render();
+});
+
+$("#btnCancel").addEventListener("click", resetForm);
+function resetForm(){
+  $("#form").reset();
+  $("#id").value = ""; pendingFiles = []; renderFileList();
+  $("#formTitle").textContent = "Novo relato";
+  $("#btnSave").textContent = "Salvar relato";
+  $("#btnCancel").hidden = true;
+  $("#gravidade").value = "3";
+  preencherAgora();
+}
+function preencherAgora(){
+  const now = new Date();
+  $("#data").value = now.toISOString().slice(0,10);
+  $("#hora").value = now.toTimeString().slice(0,5);
+}
+
+function edit(id){
+  const r = records.find(x => x.id === id); if(!r) return;
+  $("#id").value = r.id; $("#data").value = r.data; $("#hora").value = r.hora;
+  $("#titulo").value = r.titulo; $("#tipo").value = r.tipo; $("#gravidade").value = r.gravidade;
+  $("#relato").value = r.relato; $("#local").value = r.local || ""; $("#envolvido").value = r.envolvido || "";
+  $("#testemunhas").value = r.testemunhas || ""; $("#provas").value = r.provas || ""; $("#impacto").value = r.impacto || "";
+  pendingFiles = []; renderFileList();
+  $("#formTitle").textContent = "Editando relato";
+  $("#btnSave").textContent = "Salvar alterações";
+  $("#btnCancel").hidden = false;
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+function remove(id){
+  if(!confirm("Excluir este relato definitivamente?")) return;
+  records = records.filter(x => x.id !== id);
+  save(); render(); toast("Relato excluído.");
+}
+
+/* ---------- filtros e render ---------- */
+["#fBusca","#fTipo","#fOrdem","#fDe","#fAte"].forEach(s => $(s).addEventListener("input", render));
+
+function filtered(){
+  const q = $("#fBusca").value.toLowerCase().trim();
+  const tipo = $("#fTipo").value, de = $("#fDe").value, ate = $("#fAte").value;
+  let out = records.filter(r => {
+    if(tipo && r.tipo !== tipo) return false;
+    if(de && r.data < de) return false;
+    if(ate && r.data > ate) return false;
+    if(q){
+      const blob = [r.titulo,r.relato,r.local,r.envolvido,r.testemunhas,r.provas,r.impacto,r.tipo].join(" ").toLowerCase();
+      if(!blob.includes(q)) return false;
+    }
+    return true;
+  });
+  const dir = $("#fOrdem").value === "asc" ? 1 : -1;
+  out.sort((a,b) => dir * ((a.data + a.hora) < (b.data + b.hora) ? -1 : 1));
+  return out;
+}
+
+function render(){
+  const list = filtered();
+  const tl = $("#timeline");
+  tl.innerHTML = list.length ? list.map(card).join("") : `<div class="empty">Nenhum relato ${records.length ? "com esses filtros" : "registrado ainda"}.</div>`;
+  tl.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => edit(b.dataset.edit));
+  tl.querySelectorAll("[data-del]").forEach(b => b.onclick = () => remove(b.dataset.del));
+  renderStats(list);
+  renderTipos();
+  $("#printMeta").textContent =
+    `${list.length} relato(s) • gerado em ${new Date().toLocaleString("pt-BR")}`;
+}
+
+function card(r){
+  const sevColor = {1:"#3fbf7f",2:"#8fbf5a",3:"#f0b23f",4:"#f07f4a",5:"#ef5f6b"}[r.gravidade];
+  const tags = [];
+  tags.push(`<span class="tag">${esc(r.tipo)}</span>`);
+  tags.push(`<span class="tag sev" style="background:${sevColor}">Gravidade ${r.gravidade}</span>`);
+  if(r.local) tags.push(`<span class="tag">Local: ${esc(r.local)}</span>`);
+  if(r.envolvido) tags.push(`<span class="tag">Autor: ${esc(r.envolvido)}</span>`);
+  if(r.testemunhas) tags.push(`<span class="tag">Testemunhas: ${esc(r.testemunhas)}</span>`);
+  if(r.provas) tags.push(`<span class="tag">Provas: ${esc(r.provas)}</span>`);
+  if(r.impacto) tags.push(`<span class="tag">Impacto: ${esc(r.impacto)}</span>`);
+  const anexos = (r.anexos||[]).map(a => a.type && a.type.startsWith("image/")
+    ? `<a href="${a.data}" target="_blank"><img src="${a.data}" alt="${esc(a.name)}"></a>`
+    : `<a href="${a.data}" download="${esc(a.name)}">📎 ${esc(a.name)}</a>`).join("");
+  return `<article class="ev g${r.gravidade}">
+    <div class="when">${fmtDate(r.data)} (${weekday(r.data)}) às ${esc(r.hora)}</div>
+    <h3>${esc(r.titulo)}</h3>
+    <p class="body">${esc(r.relato)}</p>
+    <div class="meta">${tags.join("")}</div>
+    ${anexos ? `<div class="thumbs">${anexos}</div>` : ""}
+    <div class="meta"><span class="tag">Registrado no diário em ${fmtStamp(r.criadoEm)}${r.editadoEm ? " • editado em " + fmtStamp(r.editadoEm) : ""}</span></div>
+    <div class="ev-actions">
+      <button class="ghost" data-edit="${r.id}">Editar</button>
+      <button class="ghost" data-del="${r.id}">Excluir</button>
+    </div>
+  </article>`;
+}
+
+function renderStats(list){
+  $("#stTotal").textContent = list.length;
+  const datas = list.map(r => r.data).filter(Boolean).sort();
+  $("#stPeriodo").textContent = datas.length ? `${fmtDate(datas[0])} → ${fmtDate(datas[datas.length-1])}` : "—";
+  $("#stGraves").textContent = list.filter(r => r.gravidade >= 4).length;
+  const t = new Set();
+  list.forEach(r => (r.testemunhas||"").split(",").map(s=>s.trim()).filter(Boolean).forEach(n => t.add(n.toLowerCase())));
+  $("#stTest").textContent = t.size;
+}
+
+function renderTipos(){
+  const sel = $("#fTipo"), cur = sel.value;
+  const tipos = [...new Set(records.map(r => r.tipo))].sort();
+  sel.innerHTML = `<option value="">Todos os tipos</option>` + tipos.map(t => `<option${t===cur?" selected":""}>${esc(t)}</option>`).join("");
+}
+
+/* ---------- export / import ---------- */
+function download(name, content, mime){
+  const blob = new Blob([content], { type: mime });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+$("#btnExportJson").onclick = async () => {
+  if(!cryptoKey) return;
+  const cofre = await cifrar(records, cryptoKey, salt);
+  download(`diario-relatos-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(cofre, null, 2), "application/json");
+  toast("Backup criptografado gerado.");
+};
+$("#btnExportMd").onclick = () => {
+  const list = filtered();
+  const txt = [`DIÁRIO DE RELATOS — condutas no ambiente de trabalho`,
+    `Gerado em ${new Date().toLocaleString("pt-BR")} • ${list.length} relato(s)`, ""]
+    .concat(list.map(r => [
+      `${fmtDate(r.data)} (${weekday(r.data)}) às ${r.hora} — ${r.titulo}`,
+      `Tipo: ${r.tipo} | Gravidade: ${r.gravidade}/5`,
+      r.local ? `Local: ${r.local}` : null,
+      r.envolvido ? `Autor da conduta: ${r.envolvido}` : null,
+      r.testemunhas ? `Testemunhas: ${r.testemunhas}` : null,
+      r.provas ? `Provas: ${r.provas}` : null,
+      r.impacto ? `Impacto: ${r.impacto}` : null,
+      ``, r.relato, ``,
+      `(registrado no diário em ${fmtStamp(r.criadoEm)})`,
+      `------------------------------------------------------------`, ``
+    ].filter(x => x !== null).join("\n"))).join("\n");
+  download(`diario-relatos-${new Date().toISOString().slice(0,10)}.txt`, txt, "text/plain;charset=utf-8");
+  toast("Texto exportado.");
+};
+$("#btnPdf").onclick = () => window.print();
+$("#btnImport").onclick = () => $("#fileImport").click();
+$("#fileImport").onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = async () => {
+    try{
+      const data = JSON.parse(r.result);
+      let lista;
+      if(Array.isArray(data)){
+        lista = data;
+      } else if(data && data.ct){
+        const senha = prompt("Senha do backup (a que estava em uso quando o backup foi gerado):");
+        if(senha === null) { e.target.value = ""; return; }
+        lista = await decifrar(data, await derivar(senha, unb64(data.salt)));
+      } else throw new Error("formato");
+      const ids = new Set(records.map(x => x.id));
+      const novos = lista.filter(x => x && x.id && !ids.has(x.id));
+      records = records.concat(novos);
+      await save(); render(); toast(`${novos.length} relato(s) importado(s).`);
+    }catch(err){ toast("Arquivo inválido ou senha incorreta.", true); }
+    e.target.value = "";
+  };
+  r.readAsText(f);
+};
+
+/* ---------- init ---------- */
+(function init(){
+  preencherAgora();
+  render();
+  if(!window.crypto || !crypto.subtle){
+    alert("Este navegador não suporta a criptografia usada aqui. Abra o diário em um navegador atualizado (Chrome, Edge, Firefox) via https ou pelo arquivo local.");
+    return;
+  }
+  mostrarLock(lerCofre() ? "abrir" : "criar");
+})();
+</script>
+</body>
+</html>
